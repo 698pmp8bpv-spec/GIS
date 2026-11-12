@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>نتائج اختبار GIS</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="نتائج GIS">
+<meta name="theme-color" content="#102733">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23102733%22/%3E%3Cpath d=%22M20 34 6 27l14-7 14 7z%22 fill=%22%23b9773a%22/%3E%3Cpath d=%22M20 28 6 21l14-7 14 7z%22 fill=%22%233f8f4a%22/%3E%3Cpath d=%22M20 22 6 15l14-7 14 7z%22 fill=%22%232f7fc1%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a map sheet in a GIS workspace — dark toolbar, graduated neatline, layered basemap ground (graticule + contour lines) */
+:root{
+  --bg:#e9efed; --grid:#d3ddda; --contour:#c9d6c9; --surface:#fbfcfb; --raised:#f1f5f4; --ink:#14232b; --muted:#56676d; --line:#d2dcda;
+  --head:#102733; --on-head:#eaf4f5; --head-muted:#8fb0b8;
+  --accent:#0b7c8c; --accent-soft:#d9eff1;
+  --water:#2f7fc1; --veg:#3f8f4a; --terrain:#b9773a;
+  --green:#2b8a46; --green-soft:#dff1e4; --bad:#c0392b; --bad-soft:#fbe4e1; --warn:#a86a12; --warn-soft:#f8ecd3;
+  --gold:#b08a2e; --silver:#7d8793; --bronze:#a0623a;
+  --display:"Readex Pro","IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b161c; --grid:#14252d; --contour:#16302c; --surface:#111f26; --raised:#17282f; --ink:#e3eef0; --muted:#93a9ae; --line:#24383f;
+  --head:#07131a; --on-head:#e3f1f3; --head-muted:#6f939b;
+  --accent:#3cc0cf; --accent-soft:#123a40;
+  --water:#5aa5e3; --veg:#62b56d; --terrain:#d79a5c;
+  --green:#55c07a; --green-soft:#173723; --bad:#f0705f; --bad-soft:#3d1b17; --warn:#e3ac4f; --warn-soft:#3a2b13;
+  --gold:#d8b04f; --silver:#aab3bd; --bronze:#cf8a5c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b161c; --grid:#14252d; --contour:#16302c; --surface:#111f26; --raised:#17282f; --ink:#e3eef0; --muted:#93a9ae; --line:#24383f;
+  --head:#07131a; --on-head:#e3f1f3; --head-muted:#6f939b;
+  --accent:#3cc0cf; --accent-soft:#123a40;
+  --water:#5aa5e3; --veg:#62b56d; --terrain:#d79a5c;
+  --green:#55c07a; --green-soft:#173723; --bad:#f0705f; --bad-soft:#3d1b17; --warn:#e3ac4f; --warn-soft:#3a2b13;
+  --gold:#d8b04f; --silver:#aab3bd; --bronze:#cf8a5c; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.7;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:96px 96px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:36px 40px;position:relative}
+/* contour-line layer */
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:var(--contour);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='360' viewBox='0 0 480 360'%3E%3Cg fill='none' stroke='black' stroke-width='1.3'%3E%3Cpath d='M120 180c0-55 40-95 95-92 50 3 70 40 64 80-6 45-50 75-95 70-40-4-64-25-64-58z'/%3E%3Cpath d='M88 182c-2-80 58-128 130-124 75 4 104 60 96 115-9 66-74 104-139 97-58-6-86-40-87-88z'/%3E%3Cpath d='M56 186c-4-104 76-160 166-155 98 6 136 80 124 150-12 86-98 134-182 124-72-9-106-54-108-119z'/%3E%3Cpath d='M24 192c-6-128 94-194 202-187 120 8 166 100 152 186-15 104-120 162-224 150C68 329 28 272 24 192z'/%3E%3Cpath d='M390 70c22-12 52-6 62 16 10 24-8 48-34 50-26 2-46-14-44-36 1-12 6-22 16-30z'/%3E%3Cpath d='M372 60c32-24 82-16 98 18 16 36-14 74-54 78-40 3-70-22-66-56 2-16 10-30 22-40z'/%3E%3Cpath d='M400 300c18-14 48-10 58 10 9 20-6 40-30 42-22 2-40-10-40-28 0-10 4-18 12-24z'/%3E%3C/g%3E%3C/svg%3E") 0 0/480px 360px;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='360' viewBox='0 0 480 360'%3E%3Cg fill='none' stroke='black' stroke-width='1.3'%3E%3Cpath d='M120 180c0-55 40-95 95-92 50 3 70 40 64 80-6 45-50 75-95 70-40-4-64-25-64-58z'/%3E%3Cpath d='M88 182c-2-80 58-128 130-124 75 4 104 60 96 115-9 66-74 104-139 97-58-6-86-40-87-88z'/%3E%3Cpath d='M56 186c-4-104 76-160 166-155 98 6 136 80 124 150-12 86-98 134-182 124-72-9-106-54-108-119z'/%3E%3Cpath d='M24 192c-6-128 94-194 202-187 120 8 166 100 152 186-15 104-120 162-224 150C68 329 28 272 24 192z'/%3E%3Cpath d='M390 70c22-12 52-6 62 16 10 24-8 48-34 50-26 2-46-14-44-36 1-12 6-22 16-30z'/%3E%3Cpath d='M372 60c32-24 82-16 98 18 16 36-14 74-54 78-40 3-70-22-66-56 2-16 10-30 22-40z'/%3E%3Cpath d='M400 300c18-14 48-10 58 10 9 20-6 40-30 42-22 2-40-10-40-28 0-10 4-18 12-24z'/%3E%3C/g%3E%3C/svg%3E") 0 0/480px 360px}
+
+.fort{margin:0 auto;max-width:680px}
+.fort.wide{max-width:1080px}
+/* map sheet with graduated neatline */
+.wall{background:var(--surface);border:1px solid var(--ink);outline:1px solid var(--line);outline-offset:5px;border-radius:2px;
+  box-shadow:0 22px 44px -30px rgba(10,30,40,.55);overflow:hidden;position:relative}
+.gate{background:var(--head);color:var(--on-head);padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.gate .brand{display:flex;align-items:center;gap:12px;min-width:0}
+.gate .layers{flex:none;width:38px;height:38px}
+.gate .brand>div{display:flex;flex-direction:column;min-width:0}
+.gate .subject{font-family:var(--display);font-size:1.25rem;font-weight:600;line-height:1.35}
+.gate .unit{font-size:12px;color:var(--head-muted);letter-spacing:.02em}
+.gate .tools{display:flex;align-items:center;gap:10px}
+.gate .tag{font-family:var(--mono);font-size:12px;color:var(--head-muted);border:1px solid var(--head-muted);border-radius:4px;padding:2px 8px;white-space:nowrap;direction:ltr}
+.gate .north{width:22px;height:30px;flex:none}
+/* graduated ruler under the toolbar */
+.ruler{height:10px;background:
+  repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 10px) bottom/100% 4px no-repeat,
+  repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 50px) bottom/100% 10px no-repeat,
+  var(--raised);border-bottom:1px solid var(--ink)}
+.screen{padding:28px 24px 30px;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.4;font-weight:700}
+h1{font-size:clamp(1.5rem,5vw,2rem)}
+h2{font-size:clamp(1.1rem,3.4vw,1.28rem);font-weight:600}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0}
+.lead{color:var(--muted)}
+.eyebrow{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.02em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:2px 10px;font-size:13px;font-weight:600}
+.chip.green{background:var(--green-soft);color:var(--green)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+form{display:flex;flex-direction:column;gap:14px}
+label{font-weight:600;font-size:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+input,select{font:inherit;font-weight:400;color:var(--ink);background:var(--raised);border:1.5px solid var(--line);border-radius:6px;padding:10px 13px;width:100%}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+input[aria-invalid="true"],select[aria-invalid="true"]{border-color:var(--bad)}
+.err{color:var(--bad);font-size:14px;min-height:1.2em}
+.btn{font:inherit;font-family:var(--display);font-weight:600;font-size:16px;border:0;border-radius:6px;padding:11px 20px;
+  background:var(--accent);color:var(--surface);cursor:pointer;transition:transform .1s,filter .15s;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{filter:brightness(1.08)} .btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.quiet{background:var(--raised);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--bad);color:var(--surface)}
+.btn.sm{font-size:14px;padding:6px 12px;border-radius:5px}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.foot{font-size:12px;color:var(--muted);display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
+.scalebar,.foot .crs{font-family:var(--mono)}
+.scalebar{display:inline-flex;flex-direction:column;align-items:stretch;gap:2px;direction:ltr}
+.scalebar i{display:block;width:120px;height:6px;border:1px solid var(--ink);background:linear-gradient(90deg,var(--ink) 0 25%,var(--surface) 25% 50%,var(--ink) 50% 75%,var(--surface) 75%)}
+.scalebar span{display:flex;justify-content:space-between;font-size:10px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/*@@END-THEME@@*/
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:640px){.summary{grid-template-columns:repeat(2,1fr)}}
+.tile{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--raised)}
+.tile span{font-size:13px;color:var(--muted)}
+.tile div{font-family:var(--display);font-size:1.5rem;font-weight:700;line-height:1.3;font-variant-numeric:tabular-nums}
+.tile.top div{color:var(--accent)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.toolbar label{flex:1 1 160px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .btn{flex:1 1 auto}
+.toast{border-radius:6px;padding:10px 14px;font-weight:600;background:var(--green-soft);color:var(--green)}
+.toast.warn{background:var(--warn-soft);color:var(--warn)} .toast.bad{background:var(--bad-soft);color:var(--bad)}
+.cards{display:flex;flex-direction:column;gap:8px}
+.card{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"rank name del" "rank score score" "meta meta meta" "dots dots dots";gap:4px 12px;
+  border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--surface);align-items:center}
+.card.fresh{animation:fresh 2.5s ease-out}
+@keyframes fresh{from{background:var(--green-soft)}to{background:var(--surface)}}
+.rank{grid-area:rank;align-self:start;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;border:2px solid var(--line);color:var(--muted)}
+.rank.r1{border-color:var(--gold);color:var(--gold)} .rank.r2{border-color:var(--silver);color:var(--silver)} .rank.r3{border-color:var(--bronze);color:var(--bronze)}
+.card .nm{grid-area:name;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.card .sc{grid-area:score;display:flex;align-items:center;gap:10px}
+.card .sc b{font-family:var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.meter{flex:1;height:6px;border-radius:6px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--green)} .meter.mid i{background:var(--warn)} .meter.low i{background:var(--bad)}
+.card .mt{grid-area:meta;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dots{grid-area:dots;display:flex;gap:3px;flex-wrap:wrap;padding-top:4px}
+.dots i{width:10px;height:14px;border-radius:3px;background:var(--line)}
+.dots i.c{background:var(--green)} .dots i.n{background:var(--bad)} .dots i.x{background:var(--warn)}
+.card .del{grid-area:del}
+.empty{padding:36px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:6px}
+.empty h3{color:var(--ink);margin-bottom:6px}
+.confirmbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--bad-soft);color:var(--bad);border-radius:6px;padding:10px 12px;font-weight:600}
+.scan{position:fixed;inset:0;z-index:90;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
+.scan video{width:min(520px,100%);border-radius:8px}
+.scan p{color:#fff;margin:0;text-align:center}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:10px;height:12px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="fort">
+  <div class="wall">
+    <header class="gate">
+      <div class="brand"><svg class="layers" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 26 4 18l16-8 16 8z" style="fill:var(--terrain)" transform="translate(0 8)"/><path d="M20 26 4 18l16-8 16 8z" style="fill:var(--veg)" transform="translate(0 2)"/><path d="M20 26 4 18l16-8 16 8z" style="fill:var(--water);stroke:var(--head);stroke-width:1"/></svg><div><span class="unit">الدراسات الاجتماعية · GIS</span><span class="subject">نتائج الاختبار · تلفون المعلم</span></div></div>
+      <div class="tools"><span class="tag">PHONE</span><svg class="north" viewBox="0 0 22 30" aria-label="اتجاه الشمال"><text x="11" y="8" text-anchor="middle" font-size="8" font-family="monospace" style="fill:var(--on-head)">N</text><path d="M11 10 17 28 11 24 5 28z" style="fill:var(--head-muted)"/><path d="M11 10 11 24 5 28z" style="fill:var(--on-head)"/></svg></div>
+    </header>
+    <div class="ruler"></div>
+
+    <section class="screen">
+      <div class="toast" id="toast" hidden role="status"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <h1>ترتيب الطلاب</h1>
+        <button class="btn sm" type="button" id="scanBtn">مسح QR</button>
+      </div>
+      <p class="lead">امسح رمز QR من لابتوب الطالب أو من برنامج المعلم، بكاميرا التلفون أو من زر «مسح QR». النتائج تنحفظ على هذا التلفون.</p>
+
+      <div class="summary">
+        <div class="tile"><span>عدد النتائج</span><div id="tCount">٠</div></div>
+        <div class="tile"><span>متوسط الدرجة</span><div id="tAvg">-</div></div>
+        <div class="tile top"><span>أعلى درجة</span><div id="tTop">-</div></div>
+        <div class="tile"><span>متوسط الوقت</span><div id="tTime">-</div></div>
+      </div>
+
+      <div class="toolbar">
+        <label for="search">بحث بالاسم<input id="search" placeholder="اكتب جزءاً من الاسم"></label>
+        <label for="gradeFilter">الشعبة<select id="gradeFilter"><option value="">كل الشعب</option></select></label>
+      </div>
+      <div class="actions">
+        <button class="btn sm" type="button" id="podiumBtn">ترتيب المراكز (أفضل ١٠)</button>
+        <button class="btn sm quiet" type="button" id="htmlBtn">حفظ كملف HTML</button>
+        <button class="btn sm quiet" type="button" id="txtBtn">حفظ كملف نصي</button>
+        <button class="btn sm quiet" type="button" id="csvBtn">Excel</button>
+        <button class="btn sm ghost" type="button" id="clearBtn">مسح الكل</button>
+      </div>
+      <div class="confirmbar" id="clearConfirm" hidden>
+        <span>سيتم حذف كل النتائج من هذا التلفون. متأكد؟</span>
+        <button class="btn sm danger" type="button" id="clearYes">نعم، احذف الكل</button>
+        <button class="btn sm quiet" type="button" id="clearNo">إلغاء</button>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:var(--green)"></i>صحيحة</span><span><i style="background:var(--bad)"></i>خاطئة</span><span><i style="background:var(--warn)"></i>انتهى الوقت</span>
+      </div>
+      <div class="cards" id="cards"></div>
+      <div class="empty" id="empty" hidden>
+        <h3>لا توجد نتائج بعد</h3>
+        <p>في آخر الاختبار يطلع رمز QR على شاشة الطالب، أو اضغط «إرسال للتلفون» في برنامج المعلم، وامسحه.</p>
+      </div>
+    </section>
+  </div>
+  <div class="foot"><span class="scalebar"><i></i><span><b>0</b><b>5</b><b>10 km</b></span></span><span class="crs">WGS 84 · UTM 40N</span></div>
+</div>
+
+<script>
+/* نقل النتائج بين الأجهزة عبر رابط داخل QR (بدون إنترنت على جهاز المصدر).
+   الصيغة: <رابط صفحة الآيفون>#r=<batch>.<part>.<parts>.<flag><data>
+   flag: z = مضغوط deflate-raw ، p = غير مضغوط. البيانات base64url لنص عربي مضغوط الحروف. */
+(function () {
+  var DEFAULT_PHONE_URL = "https://698pmp8bpv-spec.github.io/gis-quiz/";
+  var MAX = 850; // أقصى طول للجزء داخل QR واحد ليسهل مسحه من الشاشة
+
+  // الحروف العربية (U+0621..U+069F) تتحول لبايت واحد 0x80..0xFE
+  function pack(str) {
+    var out = "";
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c >= 0x0621 && c <= 0x069f) out += String.fromCharCode(c - 0x05a1);
+      else if (c < 0x80) out += str[i];
+      else out += "\u007f" + String.fromCharCode(c >> 8, c & 255); // أي حرف آخر
+    }
+    return out;
+  }
+  function unpack(bin) {
+    var out = "";
+    for (var i = 0; i < bin.length; i++) {
+      var c = bin.charCodeAt(i);
+      if (c === 0x7f) { out += String.fromCharCode((bin.charCodeAt(i + 1) << 8) | bin.charCodeAt(i + 2)); i += 2; }
+      else if (c >= 0x80) out += String.fromCharCode(c + 0x05a1);
+      else out += bin[i];
+    }
+    return out;
+  }
+  function toB64u(bytes) {
+    var s = ""; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function fromB64u(t) {
+    t = t.replace(/-/g, "+").replace(/_/g, "/"); while (t.length % 4) t += "=";
+    var s = atob(t), b = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b;
+  }
+  function latin1(bin) { var b = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b; }
+  function unlatin1(b) { var s = ""; for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return s; }
+
+  async function stream(bytes, Kind) {
+    var cs = new Kind("deflate-raw");
+    var w = cs.writable.getWriter(); w.write(bytes); w.close();
+    return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+  }
+  async function encodeRows(rows) {
+    var raw = latin1(pack(JSON.stringify(rows)));
+    if (window.CompressionStream) {
+      try { return "z" + toB64u(await stream(raw, CompressionStream)); } catch (e) {}
+    }
+    return "p" + toB64u(raw);
+  }
+  async function decodeData(d) {
+    var flag = d[0], bytes = fromB64u(d.slice(1));
+    if (flag === "z") {
+      if (!window.DecompressionStream) throw new Error("المتصفح قديم: حدّث نظام الآيفون (iOS 16.4 أو أحدث).");
+      bytes = await stream(bytes, DecompressionStream);
+    }
+    return JSON.parse(unpack(unlatin1(bytes)));
+  }
+
+  // نتيجة كاملة -> صف مختصر
+  function compact(r, key) {
+    var st = "";
+    if (r.answers && key && key.length) st = r.answers.map(function (a, i) { return a === -1 ? "x" : a === key[i] ? "c" : "n"; }).join("");
+    else if (r.st) st = r.st;
+    return [String(r.id).slice(0, 10), r.first, r.father, r.tribe, r.grade || "", r.score, r.total, Math.round((r.timeSec || 0) * 10),
+      st, Math.floor(new Date(r.at).getTime() / 1000).toString(36), r.manual ? 1 : 0];
+  }
+  function expand(a) {
+    return { id: a[0], first: a[1], father: a[2], tribe: a[3], grade: a[4], score: a[5], total: a[6], timeSec: a[7] / 10,
+      st: a[8], at: new Date(parseInt(a[9], 36) * 1000).toISOString(), manual: !!a[10] };
+  }
+
+  // يقسم النتائج لأجزاء، كل جزء رابط واحد
+  async function buildLinks(results, key, base) {
+    base = (base || DEFAULT_PHONE_URL).split("#")[0];
+    var rows = results.map(function (r) { return compact(r, key); });
+    var batch = Date.now().toString(36).slice(-5), groups = [], cur = [];
+    for (var i = 0; i < rows.length; i++) {
+      var test = cur.concat([rows[i]]);
+      if (cur.length && (await encodeRows(test)).length > MAX) { groups.push(cur); cur = [rows[i]]; }
+      else cur = test;
+    }
+    if (cur.length) groups.push(cur);
+    var links = [];
+    for (var g = 0; g < groups.length; g++) {
+      links.push(base + "#r=" + batch + "." + (g + 1) + "." + groups.length + "." + (await encodeRows(groups[g])));
+    }
+    return links;
+  }
+  async function parseHash(hash) {
+    var m = /^#?r=([a-z0-9]+)\.(\d+)\.(\d+)\.(.+)$/i.exec(hash || "");
+    if (!m) return null;
+    return { batch: m[1], part: +m[2], parts: +m[3], results: (await decodeData(m[4])).map(expand) };
+  }
+
+  // يرسم QR على canvas
+  function drawQR(canvas, text, size) {
+    var q = window.QRMake(text, "L"), n = q.getModuleCount(), quiet = 4, total = n + quiet * 2;
+    var px = Math.max(2, Math.floor((size || 360) / total));
+    canvas.width = canvas.height = px * total;
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#000000";
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) ctx.fillRect((c + quiet) * px, (r + quiet) * px, px, px);
+  }
+
+  // نافذة تعرض رموز QR واحد واحد مع التنقل بينها
+  var ocss = '.qo{position:fixed;inset:0;z-index:100;background:rgba(5,15,20,.72);display:grid;place-items:center;padding:16px}' +
+    '.qo-card{background:var(--surface);color:var(--ink);border-radius:8px;max-width:520px;width:100%;padding:20px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center;max-height:100%;overflow:auto}' +
+    '.qo-card h3{font-family:var(--display);margin:0;font-size:1.2rem}.qo-card p{margin:0;color:var(--muted);font-size:14px}' +
+    '.qo-card canvas{width:min(360px,80vw);height:auto;aspect-ratio:1;image-rendering:pixelated;border:1px solid var(--line);border-radius:4px}' +
+    '.qo-nav{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}.qo-nav b{font-family:var(--display);min-width:70px}' +
+    '.qo-b{font:inherit;font-family:var(--display);font-weight:600;border-radius:6px;padding:8px 16px;cursor:pointer;border:1px solid var(--line);background:var(--raised);color:var(--ink)}' +
+    '.qo-b.main{background:var(--accent);color:var(--surface);border-color:var(--accent)}.qo-b:disabled{opacity:.4}';
+  function showLinks(links, title, note) {
+    if (!document.getElementById("qo-css")) { var st = document.createElement("style"); st.id = "qo-css"; st.textContent = ocss; document.head.appendChild(st); }
+    var ar = function (n) { return String(n).replace(/\d/g, function (d) { return "٠١٢٣٤٥٦٧٨٩"[d]; }); };
+    var ov = document.createElement("div"); ov.className = "qo"; ov.setAttribute("role", "dialog");
+    ov.innerHTML = '<div class="qo-card"><h3></h3><p class="qo-note"></p><canvas></canvas>' +
+      '<div class="qo-nav"><button class="qo-b" type="button" data-a="prev">السابق</button><b class="qo-pos"></b><button class="qo-b" type="button" data-a="next">التالي</button></div>' +
+      '<p>امسح كل الرموز بنفس الترتيب. كل رمز يضيف جزء من النتائج.</p><button class="qo-b main" type="button" data-a="close">تم</button></div>';
+    ov.querySelector("h3").textContent = title; ov.querySelector(".qo-note").textContent = note || "";
+    var i = 0, cv = ov.querySelector("canvas");
+    var draw = function () {
+      drawQR(cv, links[i], 720);
+      ov.querySelector(".qo-pos").textContent = "رمز " + ar(i + 1) + " من " + ar(links.length);
+      ov.querySelector('[data-a="prev"]').disabled = i === 0;
+      ov.querySelector('[data-a="next"]').disabled = i === links.length - 1;
+      ov.querySelector(".qo-nav").style.display = links.length > 1 ? "" : "none";
+      ov.querySelectorAll(".qo-card>p")[1].style.display = links.length > 1 ? "" : "none";
+    };
+    var close = function () { document.removeEventListener("keydown", key); ov.remove(); };
+    var key = function (e) { if (e.key === "Escape") close(); if (e.key === "ArrowLeft" && i < links.length - 1) { i++; draw(); } if (e.key === "ArrowRight" && i > 0) { i--; draw(); } };
+    ov.addEventListener("click", function (e) {
+      if (e.target === ov) return close();
+      var a = e.target.closest("[data-a]"); if (!a) return;
+      if (a.dataset.a === "close") close(); else if (a.dataset.a === "next") { i++; draw(); } else { i--; draw(); }
+    });
+    document.addEventListener("keydown", key);
+    document.body.appendChild(ov); draw(); ov.querySelector('[data-a="close"]').focus();
+  }
+
+  window.GQShare = { showLinks: showLinks, buildLinks: buildLinks, parseHash: parseHash, drawQR: drawQR, compact: compact, expand: expand, DEFAULT_PHONE_URL: DEFAULT_PHONE_URL };
+})();
+
+</script>
+<script>
+/* ترتيب المراكز الذكي: منصة تتويج لأول ٣ وقائمة للمراكز ٤ إلى ١٠، مع عرض تدريجي */
+(function () {
+  var ar = function (n) { return String(n).replace(/\d/g, function (d) { return "٠١٢٣٤٥٦٧٨٩"[d]; }); };
+  var fmt = function (s) { s = Math.round(s); return ar(Math.floor(s / 60)) + ":" + ar(String(s % 60).padStart(2, "0")); };
+  var css = '\
+.pd-ov{position:fixed;inset:0;z-index:100;background:var(--head);color:var(--on-head);overflow:auto;\
+padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));\
+display:flex;flex-direction:column;align-items:center;gap:18px;font-family:var(--body)}\
+.pd-ov::before{content:"";position:fixed;inset:0;z-index:-1;opacity:.18;background-image:linear-gradient(var(--head-muted) 1px,transparent 1px),linear-gradient(90deg,var(--head-muted) 1px,transparent 1px);background-size:64px 64px}\
+.pd-top{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}\
+.pd-top h2{font-family:var(--display);margin:0;font-size:clamp(1.3rem,4vw,2rem)}\
+.pd-top small{display:block;color:var(--head-muted);font-size:13px;font-weight:400}\
+.pd-btns{display:flex;gap:8px;flex-wrap:wrap}\
+.pd-b{font:inherit;font-family:var(--display);font-weight:600;border-radius:6px;padding:8px 16px;cursor:pointer;border:1px solid var(--head-muted);background:transparent;color:var(--on-head)}\
+.pd-b.main{background:var(--accent);border-color:var(--accent);color:var(--head)}\
+.pd-stage{width:100%;max-width:760px;display:flex;align-items:flex-end;justify-content:center;gap:clamp(8px,2vw,18px);direction:ltr;min-height:320px;padding-top:10px}\
+.pd-col{flex:1 1 0;min-width:0;max-width:230px;display:flex;flex-direction:column;align-items:center;gap:8px;direction:rtl;transition:opacity .5s,transform .6s cubic-bezier(.2,.8,.2,1)}\
+.pd-col.hide{opacity:0;transform:translateY(40px)}\
+.pd-name{font-family:var(--display);font-weight:700;text-align:center;font-size:clamp(.95rem,2.6vw,1.25rem);line-height:1.35;text-wrap:balance}\
+.pd-meta{font-size:13px;color:var(--head-muted);font-variant-numeric:tabular-nums;text-align:center}\
+.pd-block{width:100%;border-radius:6px 6px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:14px;gap:4px;position:relative;overflow:hidden;\
+background-image:repeating-radial-gradient(circle at 50% 120%,transparent 0 14px,rgba(255,255,255,.16) 14px 15px)}\
+.pd-rank{font-family:var(--display);font-weight:700;font-size:clamp(2rem,7vw,3.4rem);line-height:1;color:var(--head)}\
+.pd-score{font-family:var(--display);font-weight:700;font-size:1.05rem;color:var(--head);font-variant-numeric:tabular-nums}\
+.pd-c1 .pd-block{height:220px;background-color:var(--gold)} .pd-c2 .pd-block{height:160px;background-color:var(--silver)} .pd-c3 .pd-block{height:115px;background-color:var(--bronze)}\
+.pd-c1 .pd-name{font-size:clamp(1.05rem,3vw,1.45rem)}\
+.pd-list{width:100%;max-width:640px;display:flex;flex-direction:column;gap:8px}\
+.pd-row{display:grid;grid-template-columns:44px 1fr auto auto;gap:12px;align-items:center;padding:10px 14px;border-radius:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);transition:opacity .4s,transform .5s}\
+.pd-row.hide{opacity:0;transform:translateX(-30px)}\
+.pd-row b{font-family:var(--display);font-size:1.2rem;color:var(--head-muted);text-align:center}\
+.pd-row span{min-width:0;overflow-wrap:anywhere;font-weight:600}\
+.pd-row em{font-style:normal;color:var(--head-muted);font-size:13px;font-variant-numeric:tabular-nums}\
+.pd-row strong{font-family:var(--display);font-variant-numeric:tabular-nums}\
+.pd-empty{color:var(--head-muted);padding:60px 0;text-align:center}\
+@media (max-width:520px){.pd-c1 .pd-block{height:170px}.pd-c2 .pd-block{height:125px}.pd-c3 .pd-block{height:90px}.pd-stage{min-height:260px}.pd-row{grid-template-columns:34px 1fr auto}.pd-row em{display:none}}\
+@media (prefers-reduced-motion:reduce){.pd-col,.pd-row{transition:none}}';
+
+  function open(list, subtitle) {
+    if (!document.getElementById("pd-css")) { var st = document.createElement("style"); st.id = "pd-css"; st.textContent = css; document.head.appendChild(st); }
+    var top = list.slice(0, 10);
+    var ov = document.createElement("div"); ov.className = "pd-ov"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "ترتيب المراكز");
+    var name = function (d) { return d.first + " " + d.father + " " + d.tribe; };
+    var meta = function (d) { return (d.grade ? "الشعبة " + d.grade + " · " : "") + fmt(d.timeSec); };
+    var col = function (d, i) {
+      if (!d) return '<div class="pd-col pd-c' + (i + 1) + '" style="visibility:hidden"><div class="pd-block"></div></div>';
+      return '<div class="pd-col pd-c' + (i + 1) + ' hide" data-i="' + i + '"><div class="pd-name"></div><div class="pd-meta">' + meta(d) +
+        '</div><div class="pd-block"><div class="pd-rank">' + ar(i + 1) + '</div><div class="pd-score">' + ar(d.score) + " / " + ar(d.total) + "</div></div></div>";
+    };
+    ov.innerHTML = '<div class="pd-top"><h2>ترتيب المراكز<small></small></h2><div class="pd-btns">' +
+      '<button class="pd-b main" type="button" data-a="play">ابدأ العرض</button><button class="pd-b" type="button" data-a="all">إظهار الكل</button>' +
+      '<button class="pd-b" type="button" data-a="close">إغلاق</button></div></div>' +
+      (top.length ? '<div class="pd-stage">' + col(top[1], 1) + col(top[0], 0) + col(top[2], 2) + '</div><div class="pd-list"></div>'
+        : '<p class="pd-empty">لا توجد نتائج بعد.</p>');
+    ov.querySelector("small").textContent = (subtitle || "كل الشعب") + " · أفضل " + ar(Math.min(10, top.length || 10)) + " حسب الدرجة ثم الوقت";
+    ov.querySelectorAll(".pd-col[data-i]").forEach(function (c) { c.querySelector(".pd-name").textContent = name(top[+c.dataset.i]); });
+    var lst = ov.querySelector(".pd-list");
+    top.slice(3).forEach(function (d, k) {
+      var r = document.createElement("div"); r.className = "pd-row hide"; r.dataset.i = k + 3;
+      r.innerHTML = "<b>" + ar(k + 4) + "</b><span></span><em>" + meta(d) + "</em><strong>" + ar(d.score) + " / " + ar(d.total) + "</strong>";
+      r.querySelector("span").textContent = name(d); lst.appendChild(r);
+    });
+    var timers = [];
+    var items = function () {
+      var arr = [];
+      for (var i = top.length - 1; i >= 0; i--) arr.push(ov.querySelector('[data-i="' + i + '"]'));
+      return arr.filter(Boolean);
+    };
+    var showAll = function () { timers.forEach(clearTimeout); items().forEach(function (e) { e.classList.remove("hide"); }); };
+    var play = function () {
+      timers.forEach(clearTimeout); timers = [];
+      var its = items(); its.forEach(function (e) { e.classList.add("hide"); });
+      var t = 300;
+      its.forEach(function (e) {
+        var i = +e.dataset.i; t += i >= 3 ? 450 : i === 0 ? 1600 : 1100;
+        timers.push(setTimeout(function () { e.classList.remove("hide"); }, t));
+      });
+    };
+    var close = function () { timers.forEach(clearTimeout); document.removeEventListener("keydown", key); ov.remove(); };
+    var key = function (e) { if (e.key === "Escape") close(); };
+    ov.addEventListener("click", function (e) {
+      var a = e.target.closest("[data-a]"); if (!a) return;
+      if (a.dataset.a === "close") close(); else if (a.dataset.a === "all") showAll(); else play();
+    });
+    document.addEventListener("keydown", key);
+    document.body.appendChild(ov);
+    var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) showAll(); else play();
+    ov.querySelector('[data-a="close"]').focus();
+  }
+  window.GQPodium = { open: open };
+})();
+
+</script>
+<script>
+const $=id=>document.getElementById(id);
+const ar=n=>String(n).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
+const fmtTime=s=>{s=Math.round(s);return ar(Math.floor(s/60))+":"+ar(String(s%60).padStart(2,"0"))};
+const KEY="gq_phone_results_v1", PARTS="gq_phone_parts_v1";
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let data=[], fresh=new Set(), pendingDel=null;
+
+function load(){try{data=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){data=[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){toast("ما قدرت أحفظ على التلفون. تأكد إنك مو في التصفح الخاص.","bad")}}
+function rank(list){return list.slice().sort((a,b)=>b.score-a.score||a.timeSec-b.timeSec||new Date(a.at)-new Date(b.at))}
+function toast(t,cls){const e=$("toast");e.textContent=t;e.className="toast"+(cls?" "+cls:"");e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,7000)}
+
+async function importLink(text){
+  const h=text.includes("#")?text.slice(text.indexOf("#")):text;
+  const p=await GQShare.parseHash(h);
+  if(!p)return false;
+  let added=0;
+  for(const r of p.results){ if(!data.some(d=>d.id===r.id)){data.push(r);added++;fresh.add(r.id)} }
+  save();
+  let parts={};try{parts=JSON.parse(localStorage.getItem(PARTS)||"{}")}catch(e){}
+  const got=new Set(parts[p.batch]||[]); got.add(p.part); parts[p.batch]=[...got];
+  try{localStorage.setItem(PARTS,JSON.stringify(parts))}catch(e){}
+  const left=[];for(let i=1;i<=p.parts;i++)if(!got.has(i))left.push(ar(i));
+  let msg=(added?"أُضيفت "+ar(added)+" نتيجة":"النتائج موجودة من قبل")+(p.parts>1?" · رمز "+ar(p.part)+" من "+ar(p.parts):"");
+  if(left.length)msg+=" · باقي: "+left.join("، ");
+  toast(msg,left.length?"warn":"");
+  return true;
+}
+async function fromHash(){
+  if(!location.hash.startsWith("#r="))return;
+  try{await importLink(location.hash)}catch(e){toast("ما قدرت أقرأ الرمز: "+e.message,"bad")}
+  history.replaceState(null,"",location.pathname+location.search);
+  render();
+}
+
+function filtered(){
+  const gf=$("gradeFilter").value,q=$("search").value.trim();
+  return rank(data).filter(d=>(!gf||d.grade===gf)&&(!q||(d.first+" "+d.father+" "+d.tribe).includes(q)));
+}
+function render(){
+  const gf=$("gradeFilter"),cur=gf.value;
+  const grades=[...new Set(data.map(d=>d.grade).filter(Boolean))].sort();
+  gf.innerHTML='<option value="">كل الشعب</option>'+grades.map(g=>'<option value="'+esc(g)+'">'+esc(g)+'</option>').join("");
+  gf.value=grades.includes(cur)?cur:"";
+  const list=filtered(),n=list.length,total=list[0]?list[0].total:14;
+  $("tCount").textContent=ar(n);
+  $("tAvg").textContent=n?ar((list.reduce((a,d)=>a+d.score,0)/n).toFixed(1))+" / "+ar(total):"-";
+  $("tTop").textContent=n?ar(Math.max(...list.map(d=>d.score)))+" / "+ar(total):"-";
+  $("tTime").textContent=n?fmtTime(list.reduce((a,d)=>a+d.timeSec,0)/n):"-";
+  const box=$("cards");box.innerHTML="";$("empty").hidden=n>0;
+  list.forEach((d,i)=>{
+    const pct=d.total?d.score/d.total:0,cls=pct>=.75?"":pct>=.5?"mid":"low";
+    const el=document.createElement("div");el.className="card"+(fresh.has(d.id)?" fresh":"");
+    const when=new Date(d.at);
+    el.innerHTML='<div class="rank '+(i<3?"r"+(i+1):"")+'">'+ar(i+1)+'</div><div class="nm"></div>'+
+      '<button class="btn sm '+(pendingDel===d.id?"danger":"quiet")+' del" type="button">'+(pendingDel===d.id?"تأكيد":"حذف")+'</button>'+
+      '<div class="sc"><b>'+ar(d.score)+' / '+ar(d.total)+'</b><div class="meter '+cls+'"><i style="width:'+pct*100+'%"></i></div></div>'+
+      '<div class="mt">الشعبة '+esc(d.grade||"-")+' · الوقت '+fmtTime(d.timeSec)+' · '+ar(when.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}))+' '+ar(when.toLocaleDateString("en-GB"))+(d.manual?" · يدوي":"")+'</div>'+
+      (d.st?'<div class="dots">'+[...d.st].map((c,k)=>'<i class="'+c+'" title="'+ar(k+1)+'"></i>').join("")+'</div>':"");
+    el.querySelector(".nm").textContent=d.first+" "+d.father+" "+d.tribe;
+    el.querySelector(".del").onclick=()=>{
+      if(pendingDel!==d.id){pendingDel=d.id;render();setTimeout(()=>{if(pendingDel===d.id){pendingDel=null;render()}},4000);return}
+      pendingDel=null;data=data.filter(x=>x.id!==d.id);save();render();
+    };
+    box.appendChild(el);
+  });
+  fresh.clear();
+}
+
+// ---------- export ----------
+function download(name,type,content){
+  const blob=new Blob([content],{type});const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+function stamp(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function title(){const g=$("gradeFilter").value;return g?"الشعبة "+g:"كل الشعب"}
+$("txtBtn").onclick=()=>{
+  const list=filtered();
+  let t="نتائج اختبار نظم المعلومات الجغرافية - الصف الثامن\n"+title()+" · "+stamp()+"\nالترتيب حسب الدرجة ثم الوقت\n"+"=".repeat(40)+"\n";
+  list.forEach((d,i)=>{t+=(i+1)+". "+d.first+" "+d.father+" "+d.tribe+" | الشعبة "+(d.grade||"-")+" | "+d.score+"/"+d.total+" | الوقت "+fmtTime(d.timeSec).replace(/[٠-٩]/g,c=>"٠١٢٣٤٥٦٧٨٩".indexOf(c))+"\n"});
+  t+="=".repeat(40)+"\nعدد النتائج: "+list.length+"\n";
+  download("gis-results-"+stamp()+".txt","text/plain;charset=utf-8","﻿"+t);
+};
+$("csvBtn").onclick=()=>{
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const rows=[["الترتيب","الاسم","اسم الأب","القبيلة","الشعبة","الدرجة","من","الوقت (ثانية)","التاريخ"]];
+  filtered().forEach((d,i)=>rows.push([i+1,d.first,d.father,d.tribe,d.grade,d.score,d.total,d.timeSec,new Date(d.at).toLocaleString("en-GB")]));
+  download("gis-results-"+stamp()+".csv","text/csv;charset=utf-8","﻿"+rows.map(r=>r.map(q).join(",")).join("\r\n"));
+};
+$("htmlBtn").onclick=()=>{
+  const list=filtered();
+  const theme=document.querySelector("style").textContent.split("/*@@END-THEME@@*/")[0];
+  const rows=list.map((d,i)=>{const pct=d.total?d.score/d.total:0,cls=pct>=.75?"":pct>=.5?"mid":"low";
+    return '<tr><td><span class="rk '+(i<3?"r"+(i+1):"")+'">'+ar(i+1)+'</span></td><td class="nm">'+esc(d.first+" "+d.father+" "+d.tribe)+'</td><td>'+esc(d.grade||"-")+
+    '</td><td><div class="sc"><b>'+ar(d.score)+' / '+ar(d.total)+'</b><div class="meter '+cls+'"><i style="width:'+pct*100+'%"></i></div></div></td><td class="num">'+fmtTime(d.timeSec)+
+    '</td><td>'+(d.st?'<div class="dots">'+[...d.st].map(c=>'<i class="'+c+'"></i>').join("")+'</div>':"")+'</td></tr>'}).join("");
+  const n=list.length,total=list[0]?list[0].total:14;
+  const avg=n?ar((list.reduce((a,d)=>a+d.score,0)/n).toFixed(1)):"-";
+  const doc='<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>نتائج اختبار GIS · '+esc(title())+'</title>'+
+  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">'+
+  '<style>'+theme+'table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:start;vertical-align:middle}th{font-size:13px;color:var(--muted);background:var(--raised)}'+
+  '.rk{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;border:2px solid var(--line);color:var(--muted)}.rk.r1{border-color:var(--gold);color:var(--gold)}.rk.r2{border-color:var(--silver);color:var(--silver)}.rk.r3{border-color:var(--bronze);color:var(--bronze)}'+
+  '.nm{font-weight:600}.sc{display:flex;align-items:center;gap:8px;min-width:120px}.sc b{font-family:var(--display);white-space:nowrap}.meter{flex:1;height:6px;border-radius:6px;background:var(--line);overflow:hidden;min-width:40px}.meter i{display:block;height:100%;background:var(--green)}.meter.mid i{background:var(--warn)}.meter.low i{background:var(--bad)}'+
+  '.dots{display:flex;gap:2px}.dots i{width:8px;height:12px;border-radius:2px;background:var(--line)}.dots i.c{background:var(--green)}.dots i.n{background:var(--bad)}.dots i.x{background:var(--warn)}.tw{overflow-x:auto}.meta{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:14px}.meta b{color:var(--ink);font-family:var(--display)}</style></head><body>'+
+  '<div class="fort wide"><div class="wall"><header class="gate"><div class="brand"><div><span class="unit">الدراسات الاجتماعية · GIS · الصف الثامن</span><span class="subject">نتائج اختبار نظم المعلومات الجغرافية</span></div></div><div class="tools"><span class="tag">'+stamp()+'</span></div></header><div class="ruler"></div>'+
+  '<section class="screen"><h1>'+esc(title())+'</h1><div class="meta"><span>عدد النتائج <b>'+ar(n)+'</b></span><span>متوسط الدرجة <b>'+avg+' / '+ar(total)+'</b></span><span>الترتيب حسب الدرجة ثم الوقت</span></div>'+
+  '<div class="tw"><table><thead><tr><th>الترتيب</th><th>الطالب</th><th>الشعبة</th><th>الدرجة</th><th>الوقت</th><th>الإجابات</th></tr></thead><tbody>'+rows+'</tbody></table></div></section></div>'+
+  '<div class="foot"><span class="scalebar"><i></i><span><b>0</b><b>5</b><b>10 km</b></span></span><span class="crs">WGS 84 · UTM 40N</span></div></div></body></html>';
+  download("gis-results-"+stamp()+".html","text/html;charset=utf-8",doc);
+};
+
+$("podiumBtn").onclick=()=>GQPodium.open(filtered(),title());
+$("search").oninput=render;$("gradeFilter").onchange=render;
+$("clearBtn").onclick=()=>$("clearConfirm").hidden=false;
+$("clearNo").onclick=()=>$("clearConfirm").hidden=true;
+$("clearYes").onclick=()=>{data=[];save();try{localStorage.removeItem(PARTS)}catch(e){}$("clearConfirm").hidden=true;render()};
+
+// ---------- camera scan (for the home-screen app) ----------
+let jsqrLoaded=null;
+function loadJsQR(){
+  if(window.jsQR)return Promise.resolve();
+  if(!jsqrLoaded)jsqrLoaded=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";s.onload=ok;s.onerror=()=>{jsqrLoaded=null;no()};document.head.appendChild(s)});
+  return jsqrLoaded;
+}
+$("scanBtn").onclick=async()=>{
+  try{await loadJsQR()}catch(e){toast("ما قدرت أحمّل الماسح. استخدم كاميرا التلفون العادية بدله.","bad");return}
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})}catch(e){toast("ما في إذن للكاميرا. اسمح للموقع بالكاميرا، أو استخدم كاميرا التلفون العادية.","bad");return}
+  const ov=document.createElement("div");ov.className="scan";
+  ov.innerHTML='<video playsinline muted></video><p>وجّه الكاميرا على رمز QR</p><button class="btn quiet" type="button">إغلاق</button>';
+  document.body.appendChild(ov);
+  const v=ov.querySelector("video");v.srcObject=stream;await v.play();
+  const c=document.createElement("canvas"),ctx=c.getContext("2d",{willReadFrequently:true});let on=true,last="";
+  const stop=()=>{on=false;stream.getTracks().forEach(t=>t.stop());ov.remove();render()};
+  ov.querySelector("button").onclick=stop;
+  const tick=async()=>{
+    if(!on)return;
+    if(v.videoWidth){c.width=v.videoWidth;c.height=v.videoHeight;ctx.drawImage(v,0,0);
+      const img=ctx.getImageData(0,0,c.width,c.height),code=jsQR(img.data,img.width,img.height,{inversionAttempts:"dontInvert"});
+      if(code&&code.data&&code.data!==last){last=code.data;
+        try{ if(await importLink(code.data)){render();ov.querySelector("p").textContent=$("toast").textContent+" · امسح الرمز التالي أو اضغط إغلاق"} }
+        catch(e){ov.querySelector("p").textContent="رمز غير معروف"}
+      }}
+    requestAnimationFrame(tick);
+  };
+  tick();
+};
+
+load(); render(); fromHash();
+window.addEventListener("hashchange",fromHash);
+</script>
+</body>
+</html>
